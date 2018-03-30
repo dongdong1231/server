@@ -517,13 +517,13 @@ VTMD_table::find_archive_name(THD *thd, String &out)
   SQL_SELECT *select= NULL;
   COND *conds= NULL;
   List<TABLE_LIST> dummy;
-  SELECT_LEX &select_lex= thd->lex->select_lex;
+  SELECT_LEX &select_lex= *(thd->lex->first_select_lex());
 
   Local_da local_da(thd, ER_VERS_VTMD_ERROR);
   if (open(thd, local_da))
     return true;
 
-  Name_resolution_context &ctx= thd->lex->select_lex.context;
+  Name_resolution_context &ctx= thd->lex->first_select_lex()->context;
   TABLE_LIST *table_list= ctx.table_list;
   TABLE_LIST *first_name_resolution_table= ctx.first_name_resolution_table;
   table_map map = vtmd.table->map;
