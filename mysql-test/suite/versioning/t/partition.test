@@ -421,30 +421,6 @@ select partition_name,partition_ordinal_position,partition_method,timediff(parti
 alter table t1 drop partition p2;
 select partition_name,partition_ordinal_position,partition_method,timediff(partition_description, @ts) from information_schema.partitions where table_schema='test' and table_name='t1';
 
-create or replace table t1 (i int) with system versioning
-partition by system_time interval 1 second
-    subpartition by key (i) subpartitions 2
-    (partition p1 history, partition pn current);
-insert t1 values (1); delete from t1;
-sleep 1;
-insert t1 values (2); delete from t1;
-alter table t1 add partition (partition p0 history, partition p2 history);
-select subpartition_name,table_rows from information_schema.partitions where table_schema='test' and table_name='t1';
-
---echo ## pruning check
-set @ts=(select partition_description from information_schema.partitions
-  where table_schema='test' and table_name='t1' and partition_name='p0' limit 1);
-insert into t1 values (4),(5);
---sorted_result
-select * from t1;
-explain partitions select * from t1;
---replace_column 10 #
-explain partitions select * from t1 for system_time as of from_unixtime(@ts);
-set @ts=(select row_end from t1 for system_time all where i=1);
-select * from t1 for system_time all where row_end = @ts;
---replace_column 5 # 10 # 11 #
-explain partitions select * from t1 for system_time all where row_end = @ts;
-
 --echo #
 --echo # MDEV-15103 Assertion in ha_partition::part_records() for updating VIEW
 --echo #
